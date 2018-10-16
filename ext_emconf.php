@@ -10,11 +10,11 @@ $EM_CONF[$_EXTKEY] = array(
 	'author' => 'Dev-Team Typoheads',
 	'author_email' => 'dev@typoheads.at',
 	'author_company' => 'Typoheads GmbH',
-	'version' => '2.0.0-dev',
+	'version' => '2.1.0-dev',
 	'_md5_values_when_last_written' => '',
 	'constraints' => array(
 		'depends' => array(
-			'typo3' => '6.2.3-8.7.99'
+			'typo3' => '6.2.3-9.5.99'
 		),
 		'conflicts' => array(),
 		'suggests' => array(),

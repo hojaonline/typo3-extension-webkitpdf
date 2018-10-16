@@ -24,14 +24,61 @@ namespace Tx\Webkitpdf\Utility;
  *  This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
 
-use TYPO3\CMS\Core\Cache\Backend\Typo3DatabaseBackend;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Cache\Backend\AbstractBackend;
+use TYPO3\CMS\Core\Cache\Backend\PhpCapableBackendInterface;
+use TYPO3\CMS\Core\Cache;
 
 /**
  * Cache handling for generated PDF documents.
  */
-class CacheDatabaseBackend extends Typo3DatabaseBackend {
+class CacheDatabaseBackend extends AbstractBackend {
 
+        /**
+         * Sets a reference to the cache frontend which uses this backend
+         *
+         * @param Cache\Frontend\FrontendInterface $cache The frontend for this backend
+         */
+        public function setCache(Cache\Frontend\FrontendInterface $cache){
+            
+        }
+        /**
+         * Checks if a cache entry with the specified identifier exists.
+         *
+         * @param string $entryIdentifier An identifier specifying the cache entry
+         * @return bool TRUE if such an entry exists, FALSE if not
+         */
+        public function has($entryIdentifier){
+            
+        }
+        /**
+         * Removes all cache entries matching the specified identifier.
+         * Usually this only affects one entry but if - for what reason ever -
+         * old entries for the identifier still exist, they are removed as well.
+         *
+         * @param string $entryIdentifier Specifies the cache entry to remove
+         * @return bool TRUE if (at least) an entry could be removed or FALSE if no entry was found
+         */
+        public function remove($entryIdentifier){
+            
+        }
+        /**
+         * Removes all cache entries of this cache.
+         */
+        public function flush(){
+            
+        }
+         /**
+         * Loads data from the cache.
+         *
+         * @param string $entryIdentifier An identifier which describes the cache entry to load
+         * @return mixed The cache entry's content as a string or FALSE if the cache entry could not be loaded
+         */
+        public function get($entryIdentifier){
+            
+        }
+    
 	/**
 	 * If this is larger 0 and the number of entries in the cache exeeds the
 	 * number of allowed entries, old entries will be deleted.
@@ -85,13 +132,6 @@ class CacheDatabaseBackend extends Typo3DatabaseBackend {
 	}
 
 	/**
-	 * @return \TYPO3\CMS\Core\Database\DatabaseConnection
-	 */
-	protected function getDatabaseConnection() {
-		return $GLOBALS['TYPO3_DB'];
-	}
-
-	/**
 	 * Checks if there are more valid entries in the database than allowed and
 	 * removes old entries if required. After this call one more entry can be added
 	 * whithout exceeding the $maximumNumberOfEntries limit.
@@ -100,20 +140,28 @@ class CacheDatabaseBackend extends Typo3DatabaseBackend {
 	 */
 	protected function removeOldEntriesIfRequired() {
 
-		$db = $this->getDatabaseConnection();
-		$cacheEntryCount = $db->exec_SELECTcountRows(
-			'*',
-			$this->cacheTable,
-			$this->notExpiredStatement
-		);
-
+		$queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($this->cacheTable);
+                $cacheEntryCount = $queryBuilder
+                        ->count('uid')
+                        ->from($this->cacheTable)
+                        ->where($this->notExpiredStatement)
+                        ->execute()
+                        ->fetchColumn(0);
+		
 		if ($cacheEntryCount < $this->maximumNumberOfEntries) {
 			return;
 		}
 
 		$tooManyItems = ($cacheEntryCount + 1) - $this->maximumNumberOfEntries;
-		$rows = $db->exec_SELECTgetRows($this->identifierField, $this->cacheTable, $this->notExpiredStatement, '', $this->expiresField . ' ASC', $tooManyItems);
-		foreach ($rows as $row) {
+                
+                $rows = $queryBuilder
+                        ->select($this->identifierField)
+                        ->from($this->cacheTable)
+                        ->where($this->notExpiredStatement)
+                        ->orderBy($this->expiresField, "ASC")
+                        ->setMaxResults($tooManyItems)
+                        ->execute();
+		while($row = $rows->fetch()){
 			$this->remove(array_shift($row));
 		}
 	}
